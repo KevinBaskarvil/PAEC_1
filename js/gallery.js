@@ -48,7 +48,7 @@ const GalleryData = {
       });
       if (!response.ok) throw new Error('Error al leer datos');
       const data = await response.json();
-      this._cache = Array.isArray(data.record) ? data.record : [];
+      this._cache = Array.isArray(data.record) ? data.record.filter(i => i.id) : [];
       this._lastFetch = now;
       return this._cache;
     } catch (err) {
