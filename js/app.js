@@ -238,9 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="gallery-item-title">${escapeHtml(item.title)}</div>
             <div class="gallery-item-meta">
               <span class="gallery-item-category">${categoryLabels[item.category] || item.category}</span>
-              <button class="gallery-item-delete" 
-                      onclick="event.stopPropagation(); deleteItem('${item.id}')" 
-                      title="Eliminar">🗑</button>
+              
             </div>
           </div>
         </div>
