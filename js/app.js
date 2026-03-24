@@ -1,10 +1,9 @@
 /* ═══════════════════════════════════════════
-   CHROMATA — App Principal
+   CHROMATA — App Principal (Cloud Version)
    ═══════════════════════════════════════════ */
 
 document.addEventListener('DOMContentLoaded', () => {
 
-  // ── DOM Elements ──
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => document.querySelectorAll(sel);
 
@@ -32,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentFile = null;
   let currentFilter = 'todos';
 
-  // ── Init ──
+  // ── Init (async) ──
   renderGallery();
   updateStats();
 
@@ -45,7 +44,6 @@ document.addEventListener('DOMContentLoaded', () => {
     mainNav.classList.toggle('open');
   });
 
-  // Cerrar menú al hacer clic en un link
   $$('.nav-link').forEach(link => {
     link.addEventListener('click', () => {
       menuToggle.classList.remove('active');
@@ -53,8 +51,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Active nav on scroll
-  const sections = ['#galeria', '#subir', '#acerca'];
   window.addEventListener('scroll', () => {
     const scrollY = window.scrollY + 200;
     $$('.nav-link').forEach(link => {
@@ -73,7 +69,6 @@ document.addEventListener('DOMContentLoaded', () => {
   //  UPLOAD FLOW
   // ═══════════════════════════════════════
 
-  // Drag & Drop
   ['dragenter', 'dragover'].forEach(evt => {
     dropzone.addEventListener(evt, (e) => {
       e.preventDefault();
@@ -104,7 +99,6 @@ document.addEventListener('DOMContentLoaded', () => {
   function handleFileSelect(file) {
     currentFile = file;
 
-    // Preview
     previewArea.innerHTML = '';
     if (file.type.startsWith('image/')) {
       const img = document.createElement('img');
@@ -119,16 +113,13 @@ document.addEventListener('DOMContentLoaded', () => {
       previewArea.appendChild(video);
     }
 
-    // Auto-fill title
     const nameWithoutExt = file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
     mediaTitle.value = nameWithoutExt;
 
-    // Auto-select category
     if (file.type.startsWith('video/')) {
       mediaCategory.value = 'video';
     }
 
-    // Show form
     dropzone.style.display = 'none';
     uploadForm.style.display = 'block';
     uploadProgress.style.display = 'none';
@@ -144,13 +135,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const title = mediaTitle.value.trim() || 'Sin título';
     const category = mediaCategory.value;
 
-    // Verificar configuración
     if (!CloudinaryConfig.isConfigured) {
-      showToast('⚠️ Configura Cloudinary en js/cloudinary.js primero', 'error');
+      showToast('⚠️ Configura Cloudinary en js/cloudinary.js', 'error');
       return;
     }
 
-    // Show progress
     uploadForm.style.display = 'none';
     uploadProgress.style.display = 'block';
     progressFill.style.width = '0%';
@@ -162,10 +151,9 @@ document.addEventListener('DOMContentLoaded', () => {
         progressText.textContent = `Subiendo... ${percent}%`;
       });
 
-      progressText.textContent = '¡Subida completada!';
+      progressText.textContent = 'Guardando en la galería...';
 
-      // Save to gallery
-      GalleryData.add({
+      await GalleryData.add({
         title,
         category,
         url: result.url,
@@ -175,9 +163,10 @@ document.addEventListener('DOMContentLoaded', () => {
         cloudinaryId: result.id,
       });
 
+      progressText.textContent = '¡Completado!';
       showToast('✅ ¡Archivo subido correctamente!', 'success');
-      renderGallery();
-      updateStats();
+      await renderGallery();
+      await updateStats();
 
       setTimeout(resetUpload, 1500);
 
@@ -205,8 +194,8 @@ document.addEventListener('DOMContentLoaded', () => {
   //  GALLERY
   // ═══════════════════════════════════════
 
-  function renderGallery() {
-    const items = GalleryData.filterByCategory(currentFilter);
+  async function renderGallery() {
+    const items = await GalleryData.filterByCategory(currentFilter);
 
     if (items.length === 0) {
       galleryGrid.style.display = 'none';
@@ -261,17 +250,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── Filters ──
   $$('.filter-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       $$('.filter-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       currentFilter = btn.dataset.filter;
-      renderGallery();
+      await renderGallery();
     });
   });
 
   // ── Lightbox ──
-  window.openLightbox = function(id) {
-    const item = GalleryData.getAll().find(i => i.id === id);
+  window.openLightbox = async function(id) {
+    const items = await GalleryData.getAll();
+    const item = items.find(i => i.id === id);
     if (!item) return;
 
     if (item.type === 'video') {
@@ -309,24 +299,23 @@ document.addEventListener('DOMContentLoaded', () => {
   function closeLightbox() {
     lightbox.classList.remove('active');
     document.body.style.overflow = '';
-    // Detener videos
     const video = lightboxContent.querySelector('video');
     if (video) video.pause();
   }
 
   // ── Delete ──
-  window.deleteItem = function(id) {
+  window.deleteItem = async function(id) {
     if (confirm('¿Eliminar este archivo de la galería?')) {
-      GalleryData.remove(id);
-      renderGallery();
-      updateStats();
+      await GalleryData.remove(id);
+      await renderGallery();
+      await updateStats();
       showToast('🗑 Archivo eliminado', 'info');
     }
   };
 
   // ── Stats ──
-  function updateStats() {
-    const stats = GalleryData.getStats();
+  async function updateStats() {
+    const stats = await GalleryData.getStats();
     animateNumber($('#totalMedia'), stats.total);
     animateNumber($('#totalPhotos'), stats.photos);
     animateNumber($('#totalVideos'), stats.videos);
@@ -340,7 +329,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function update(currentTime) {
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      // Ease out quad
       const eased = 1 - (1 - progress) * (1 - progress);
       el.textContent = Math.round(start + (target - start) * eased);
       if (progress < 1) requestAnimationFrame(update);
@@ -370,7 +358,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return div.innerHTML;
   }
 
-  // ── Smooth scroll para links ──
   $$('a[href^="#"]').forEach(link => {
     link.addEventListener('click', (e) => {
       const target = $(link.getAttribute('href'));
@@ -381,7 +368,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // ── Intersection Observer for animations ──
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
