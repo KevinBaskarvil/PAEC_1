@@ -1012,7 +1012,7 @@ body {
     position: fixed;
     top: 0;
     right: -100%;
-    width: 500px;
+    width: 40px;
     height: 100vh;
     background: var(--bg-card);
     border-left: 1px solid var(--border);
