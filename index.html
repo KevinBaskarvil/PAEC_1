@@ -57,13 +57,13 @@
         </div>
         <div class="stat-divider"></div>
         <div class="stat">
-          <span class="stat-num" id="totalPhotos">0</span>
-          <span class="stat-label">Fotos</span>
+          <span class="stat-num" id="totalGrados">3</span>
+          <span class="stat-label">Grados</span>
         </div>
         <div class="stat-divider"></div>
         <div class="stat">
-          <span class="stat-num" id="totalVideos">0</span>
-          <span class="stat-label">Videos</span>
+          <span class="stat-num" id="totalGrupos">18</span>
+          <span class="stat-label">Grupos</span>
         </div>
       </div>
     </div>
@@ -99,16 +99,26 @@
             <label for="mediaTitle">Título</label>
             <input type="text" id="mediaTitle" placeholder="Nombre de tu archivo" class="form-input">
           </div>
-          <div class="form-group">
-            <label for="mediaCategory">Categoría</label>
-            <select id="mediaCategory" class="form-input">
-              <option value="arte">🎨 Arte</option>
-              <option value="fotografia">📸 Fotografía</option>
-              <option value="video">🎬 Video</option>
-              <option value="diseno">✏️ Diseño</option>
-              <option value="naturaleza">🌿 Naturaleza</option>
-              <option value="otro">📁 Otro</option>
-            </select>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="mediaGrado">Grado</label>
+              <select id="mediaGrado" class="form-input">
+                <option value="1">📘 Primer Grado</option>
+                <option value="2">📗 Segundo Grado</option>
+                <option value="3">📙 Tercer Grado</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="mediaGrupo">Grupo</label>
+              <select id="mediaGrupo" class="form-input">
+                <option value="1">Grupo 1</option>
+                <option value="2">Grupo 2</option>
+                <option value="3">Grupo 3</option>
+                <option value="4">Grupo 4</option>
+                <option value="5">Grupo 5</option>
+                <option value="6">Grupo 6</option>
+              </select>
+            </div>
           </div>
           <div class="form-actions">
             <button class="btn btn-ghost" id="cancelUpload">Cancelar</button>
@@ -136,14 +146,56 @@
         <h2 class="section-title">Explora el contenido</h2>
       </div>
 
-      <div class="filter-bar">
-        <button class="filter-btn active" data-filter="todos">Todos</button>
-        <button class="filter-btn" data-filter="arte">🎨 Arte</button>
-        <button class="filter-btn" data-filter="fotografia">📸 Foto</button>
-        <button class="filter-btn" data-filter="video">🎬 Video</button>
-        <button class="filter-btn" data-filter="diseno">✏️ Diseño</button>
-        <button class="filter-btn" data-filter="naturaleza">🌿 Naturaleza</button>
-        <button class="filter-btn" data-filter="otro">📁 Otro</button>
+      <div class="folder-nav" id="folderNav">
+        <button class="folder-btn folder-all active" data-grado="todos">
+          <span class="folder-icon">📂</span> Todos
+        </button>
+        <div class="folder-group">
+          <button class="folder-btn folder-main" data-grado="1">
+            <span class="folder-icon">📘</span> Primer Grado
+            <span class="folder-arrow">▸</span>
+          </button>
+          <div class="folder-subs" data-parent="1">
+            <button class="folder-btn folder-sub" data-grado="1" data-grupo="1">Grupo 1</button>
+            <button class="folder-btn folder-sub" data-grado="1" data-grupo="2">Grupo 2</button>
+            <button class="folder-btn folder-sub" data-grado="1" data-grupo="3">Grupo 3</button>
+            <button class="folder-btn folder-sub" data-grado="1" data-grupo="4">Grupo 4</button>
+            <button class="folder-btn folder-sub" data-grado="1" data-grupo="5">Grupo 5</button>
+            <button class="folder-btn folder-sub" data-grado="1" data-grupo="6">Grupo 6</button>
+          </div>
+        </div>
+        <div class="folder-group">
+          <button class="folder-btn folder-main" data-grado="2">
+            <span class="folder-icon">📗</span> Segundo Grado
+            <span class="folder-arrow">▸</span>
+          </button>
+          <div class="folder-subs" data-parent="2">
+            <button class="folder-btn folder-sub" data-grado="2" data-grupo="1">Grupo 1</button>
+            <button class="folder-btn folder-sub" data-grado="2" data-grupo="2">Grupo 2</button>
+            <button class="folder-btn folder-sub" data-grado="2" data-grupo="3">Grupo 3</button>
+            <button class="folder-btn folder-sub" data-grado="2" data-grupo="4">Grupo 4</button>
+            <button class="folder-btn folder-sub" data-grado="2" data-grupo="5">Grupo 5</button>
+            <button class="folder-btn folder-sub" data-grado="2" data-grupo="6">Grupo 6</button>
+          </div>
+        </div>
+        <div class="folder-group">
+          <button class="folder-btn folder-main" data-grado="3">
+            <span class="folder-icon">📙</span> Tercer Grado
+            <span class="folder-arrow">▸</span>
+          </button>
+          <div class="folder-subs" data-parent="3">
+            <button class="folder-btn folder-sub" data-grado="3" data-grupo="1">Grupo 1</button>
+            <button class="folder-btn folder-sub" data-grado="3" data-grupo="2">Grupo 2</button>
+            <button class="folder-btn folder-sub" data-grado="3" data-grupo="3">Grupo 3</button>
+            <button class="folder-btn folder-sub" data-grado="3" data-grupo="4">Grupo 4</button>
+            <button class="folder-btn folder-sub" data-grado="3" data-grupo="5">Grupo 5</button>
+            <button class="folder-btn folder-sub" data-grado="3" data-grupo="6">Grupo 6</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="breadcrumb" id="breadcrumb">
+        <span class="breadcrumb-item active">📂 Todos</span>
       </div>
 
       <div class="gallery-grid" id="galleryGrid">
