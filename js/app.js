@@ -1,5 +1,6 @@
 /* ═══════════════════════════════════════════
-   CHROMATA — App Principal (Cloud Version)
+   PAEC — App Principal (Cloud Version)
+   Clasificación por Grado y Grupo
    ═══════════════════════════════════════════ */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -17,7 +18,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const cancelUpload = $('#cancelUpload');
   const confirmUpload = $('#confirmUpload');
   const mediaTitle = $('#mediaTitle');
-  const mediaCategory = $('#mediaCategory');
+  const mediaGrado = $('#mediaGrado');
+  const mediaGrupo = $('#mediaGrupo');
   const galleryGrid = $('#galleryGrid');
   const galleryEmpty = $('#galleryEmpty');
   const lightbox = $('#lightbox');
@@ -27,11 +29,20 @@ document.addEventListener('DOMContentLoaded', () => {
   const menuToggle = $('.menu-toggle');
   const mainNav = $('.main-nav');
   const toastContainer = $('#toastContainer');
+  const breadcrumb = $('#breadcrumb');
 
   let currentFile = null;
-  let currentFilter = 'todos';
+  let currentFilterGrado = 'todos';
+  let currentFilterGrupo = null;
 
-  // ── Init (async) ──
+  // Grado info
+  const gradoLabels = {
+    '1': { name: 'Primer Grado', icon: '📘', color: '#5BB5E0' },
+    '2': { name: 'Segundo Grado', icon: '📗', color: '#4DB8A4' },
+    '3': { name: 'Tercer Grado', icon: '📙', color: '#E8A838' }
+  };
+
+  // ── Init ──
   renderGallery();
   updateStats();
 
@@ -116,8 +127,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const nameWithoutExt = file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
     mediaTitle.value = nameWithoutExt;
 
-    if (file.type.startsWith('video/')) {
-      mediaCategory.value = 'video';
+    // If user is already browsing a specific grade/group, pre-select them
+    if (currentFilterGrado !== 'todos') {
+      mediaGrado.value = currentFilterGrado;
+      if (currentFilterGrupo) {
+        mediaGrupo.value = currentFilterGrupo;
+      }
     }
 
     dropzone.style.display = 'none';
@@ -133,7 +148,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!currentFile) return;
 
     const title = mediaTitle.value.trim() || 'Sin título';
-    const category = mediaCategory.value;
+    const grado = mediaGrado.value;
+    const grupo = mediaGrupo.value;
 
     if (!CloudinaryConfig.isConfigured) {
       showToast('⚠️ Configura Cloudinary en js/cloudinary.js', 'error');
@@ -155,7 +171,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       await GalleryData.add({
         title,
-        category,
+        grado,
+        grupo,
+        category: `grado_${grado}_grupo_${grupo}`,
         url: result.url,
         thumbnail: result.thumbnail,
         type: result.type,
@@ -164,7 +182,8 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       progressText.textContent = '¡Completado!';
-      showToast('✅ ¡Archivo subido correctamente!', 'success');
+      const gradoInfo = gradoLabels[grado];
+      showToast(`✅ Imagen guardada en ${gradoInfo.icon} ${gradoInfo.name} — Grupo ${grupo}`, 'success');
       await renderGallery();
       await updateStats();
 
@@ -182,7 +201,8 @@ document.addEventListener('DOMContentLoaded', () => {
     currentFile = null;
     fileInput.value = '';
     mediaTitle.value = '';
-    mediaCategory.value = 'arte';
+    mediaGrado.value = '1';
+    mediaGrupo.value = '1';
     previewArea.innerHTML = '';
     dropzone.style.display = 'block';
     uploadForm.style.display = 'none';
@@ -191,15 +211,124 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ═══════════════════════════════════════
+  //  FOLDER NAVIGATION
+  // ═══════════════════════════════════════
+
+  // Toggle main folder open/close
+  $$('.folder-main').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const grado = btn.dataset.grado;
+      const folderGroup = btn.closest('.folder-group');
+      const isOpen = folderGroup.classList.contains('open');
+
+      // Close all folder groups
+      $$('.folder-group').forEach(fg => fg.classList.remove('open'));
+      $$('.folder-main .folder-arrow').forEach(a => a.textContent = '▸');
+
+      if (!isOpen) {
+        folderGroup.classList.add('open');
+        btn.querySelector('.folder-arrow').textContent = '▾';
+      }
+
+      // Set filter to show all groups for this grade
+      $$('.folder-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentFilterGrado = grado;
+      currentFilterGrupo = null;
+      updateBreadcrumb();
+      await renderGallery();
+    });
+  });
+
+  // Sub-folder (grupo) click
+  $$('.folder-sub').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      $$('.folder-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentFilterGrado = btn.dataset.grado;
+      currentFilterGrupo = btn.dataset.grupo;
+      updateBreadcrumb();
+      await renderGallery();
+    });
+  });
+
+  // "Todos" button
+  $('.folder-all').addEventListener('click', async () => {
+    $$('.folder-btn').forEach(b => b.classList.remove('active'));
+    $$('.folder-group').forEach(fg => fg.classList.remove('open'));
+    $$('.folder-main .folder-arrow').forEach(a => a.textContent = '▸');
+    $('.folder-all').classList.add('active');
+    currentFilterGrado = 'todos';
+    currentFilterGrupo = null;
+    updateBreadcrumb();
+    await renderGallery();
+  });
+
+  function updateBreadcrumb() {
+    if (currentFilterGrado === 'todos') {
+      breadcrumb.innerHTML = '<span class="breadcrumb-item active">📂 Todos</span>';
+    } else {
+      const gradoInfo = gradoLabels[currentFilterGrado];
+      let html = `<span class="breadcrumb-item clickable" data-nav="todos">📂 Todos</span>`;
+      html += `<span class="breadcrumb-sep">›</span>`;
+      
+      if (currentFilterGrupo) {
+        html += `<span class="breadcrumb-item clickable" data-nav="grado" data-grado="${currentFilterGrado}">${gradoInfo.icon} ${gradoInfo.name}</span>`;
+        html += `<span class="breadcrumb-sep">›</span>`;
+        html += `<span class="breadcrumb-item active">📁 Grupo ${currentFilterGrupo}</span>`;
+      } else {
+        html += `<span class="breadcrumb-item active">${gradoInfo.icon} ${gradoInfo.name}</span>`;
+      }
+      
+      breadcrumb.innerHTML = html;
+    }
+
+    // Breadcrumb click handlers
+    breadcrumb.querySelectorAll('.breadcrumb-item.clickable').forEach(item => {
+      item.addEventListener('click', async () => {
+        const nav = item.dataset.nav;
+        if (nav === 'todos') {
+          $('.folder-all').click();
+        } else if (nav === 'grado') {
+          const grado = item.dataset.grado;
+          const mainBtn = $(`.folder-main[data-grado="${grado}"]`);
+          if (mainBtn) mainBtn.click();
+        }
+      });
+    });
+  }
+
+  // ═══════════════════════════════════════
   //  GALLERY
   // ═══════════════════════════════════════
 
   async function renderGallery() {
-    const items = await GalleryData.filterByCategory(currentFilter);
+    let items = await GalleryData.getAll();
+
+    // Filter by grado and grupo
+    if (currentFilterGrado !== 'todos') {
+      items = items.filter(item => item.grado === currentFilterGrado);
+      if (currentFilterGrupo) {
+        items = items.filter(item => item.grupo === currentFilterGrupo);
+      }
+    }
 
     if (items.length === 0) {
       galleryGrid.style.display = 'none';
       galleryEmpty.style.display = 'block';
+
+      // Custom empty message
+      if (currentFilterGrado !== 'todos') {
+        const gradoInfo = gradoLabels[currentFilterGrado];
+        const location = currentFilterGrupo 
+          ? `${gradoInfo.icon} ${gradoInfo.name} — Grupo ${currentFilterGrupo}`
+          : `${gradoInfo.icon} ${gradoInfo.name}`;
+        galleryEmpty.querySelector('.empty-text').textContent = `Sin contenido en ${location}`;
+        galleryEmpty.querySelector('.empty-hint').textContent = 'Sube archivos a esta carpeta para comenzar';
+      } else {
+        galleryEmpty.querySelector('.empty-text').textContent = 'Aún no hay contenido';
+        galleryEmpty.querySelector('.empty-hint').textContent = 'Sube tu primera foto o video para comenzar';
+      }
       return;
     }
 
@@ -212,19 +341,14 @@ document.addEventListener('DOMContentLoaded', () => {
         ? getThumbnailUrl(item.thumbnail, 500)
         : getThumbnailUrl(item.url, 500);
       
-      const categoryLabels = {
-        arte: '🎨 Arte',
-        fotografia: '📸 Foto',
-        video: '🎬 Video',
-        diseno: '✏️ Diseño',
-        naturaleza: '🌿 Naturaleza',
-        otro: '📁 Otro'
-      };
+      const gradoInfo = gradoLabels[item.grado] || { name: 'Sin grado', icon: '📁', color: '#888' };
+      const locationLabel = `${gradoInfo.icon} ${item.grado}° — G${item.grupo}`;
 
       return `
         <div class="gallery-item" 
              data-id="${item.id}" 
-             data-category="${item.category}"
+             data-grado="${item.grado}"
+             data-grupo="${item.grupo}"
              style="animation-delay: ${index * 0.06}s">
           <div class="gallery-item-media" onclick="openLightbox('${item.id}')">
             ${isVideo 
@@ -232,29 +356,21 @@ document.addEventListener('DOMContentLoaded', () => {
                  <div class="gallery-item-play"><div class="play-circle">▶</div></div>`
               : `<img src="${thumbUrl}" alt="${item.title}" loading="lazy">`
             }
-            <span class="gallery-item-badge">${isVideo ? 'Video' : 'Foto'}</span>
+            <span class="gallery-item-badge" style="background: ${gradoInfo.color}22; color: ${gradoInfo.color}; border: 1px solid ${gradoInfo.color}44;">${isVideo ? '🎬 Video' : '📷 Foto'}</span>
           </div>
           <div class="gallery-item-info">
             <div class="gallery-item-title">${escapeHtml(item.title)}</div>
             <div class="gallery-item-meta">
-              <span class="gallery-item-category">${categoryLabels[item.category] || item.category}</span>
-              
+              <span class="gallery-item-category" style="color: ${gradoInfo.color}">${locationLabel}</span>
+              <button class="gallery-item-delete" 
+                      onclick="event.stopPropagation(); deleteItem('${item.id}')" 
+                      title="Eliminar">🗑</button>
             </div>
           </div>
         </div>
       `;
     }).join('');
   }
-
-  // ── Filters ──
-  $$('.filter-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      $$('.filter-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      currentFilter = btn.dataset.filter;
-      await renderGallery();
-    });
-  });
 
   // ── Lightbox ──
   window.openLightbox = async function(id) {
@@ -271,14 +387,11 @@ document.addEventListener('DOMContentLoaded', () => {
         <img src="${getOptimizedUrl(item.url, { width: 1400, quality: 'auto' })}" alt="${item.title}">`;
     }
 
-    const categoryLabels = {
-      arte: '🎨 Arte', fotografia: '📸 Fotografía', video: '🎬 Video',
-      diseno: '✏️ Diseño', naturaleza: '🌿 Naturaleza', otro: '📁 Otro'
-    };
+    const gradoInfo = gradoLabels[item.grado] || { name: 'Sin grado', icon: '📁' };
 
     lightboxInfo.innerHTML = `
       <h3>${escapeHtml(item.title)}</h3>
-      <p>${categoryLabels[item.category] || item.category}</p>
+      <p>${gradoInfo.icon} ${gradoInfo.name} — Grupo ${item.grupo}</p>
     `;
 
     lightbox.classList.add('active');
@@ -301,22 +414,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (video) video.pause();
   }
 
-  // ── Delete ──
-  window.deleteItem = async function(id) {
-    if (confirm('¿Eliminar este archivo de la galería?')) {
-      await GalleryData.remove(id);
-      await renderGallery();
-      await updateStats();
-      showToast('🗑 Archivo eliminado', 'info');
-    }
-  };
-
   // ── Stats ──
   async function updateStats() {
-    const stats = await GalleryData.getStats();
-    animateNumber($('#totalMedia'), stats.total);
-    animateNumber($('#totalPhotos'), stats.photos);
-    animateNumber($('#totalVideos'), stats.videos);
+    const items = await GalleryData.getAll();
+    animateNumber($('#totalMedia'), items.length);
+    // Grados and Grupos are fixed
+    $('#totalGrados').textContent = '3';
+    $('#totalGrupos').textContent = '18';
   }
 
   function animateNumber(el, target) {
