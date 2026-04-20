@@ -62,7 +62,9 @@ const GalleryData = {
     const newItem = {
       id: `item_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       title: item.title || 'Sin título',
-      category: item.category || 'otro',
+      grado: item.grado || '1',
+      grupo: item.grupo || '1',
+      category: item.category || `grado_${item.grado || '1'}_grupo_${item.grupo || '1'}`,
       url: item.url,
       thumbnail: item.thumbnail || item.url,
       type: item.type,
